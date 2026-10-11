@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cloud-Based Image Processing System</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">☁ CloudPixel</div>
+    <span>Cloud-Based Image Processing System</span>
+  </header>
+
+  <main class="container">
+    <section class="hero">
+      <p class="eyebrow">SIMPLE • FAST • ONLINE</p>
+      <h1>Process your images in the cloud</h1>
+      <p>Upload an image, choose an operation, and preview or download your result.</p>
+    </section>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert {{ category }}">{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <section class="panel">
+      <form method="POST" enctype="multipart/form-data" id="processForm">
+        <label class="field-label" for="image">1. Choose an image</label>
+        <input type="file" id="image" name="image" accept=".jpg,.jpeg,.png,.webp" required>
+        <p class="hint">Supported: JPG, JPEG, PNG, WEBP · Maximum size: 10 MB</p>
+
+        <label class="field-label" for="operation">2. Select an operation</label>
+        <select name="operation" id="operation">
+          <option value="grayscale">Grayscale conversion</option>
+          <option value="compress">Image compression</option>
+          <option value="brightness">Brightness enhancement</option>
+          <option value="resize">Resize image</option>
+        </select>
+
+        <div id="brightnessFields" class="option-fields hidden">
+          <label for="brightness">Brightness: <strong id="brightnessValue">1.2×</strong></label>
+          <input type="range" id="brightness" name="brightness" min="0.2" max="2" step="0.1" value="1.2">
+          <p class="hint">1.0 is the original brightness. Values above 1 make the image brighter.</p>
+        </div>
+
+        <div id="resizeFields" class="option-fields hidden">
+          <div class="dimension-grid">
+            <div><label for="width">Width (px)</label><input type="number" id="width" name="width" min="1" max="4000" value="800"></div>
+            <div><label for="height">Height (px)</label><input type="number" id="height" name="height" min="1" max="4000" value="600"></div>
+          </div>
+          <p class="hint">The image is scaled to fit within these dimensions while preserving its aspect ratio.</p>
+        </div>
+
+        <button type="submit" id="submitButton">Process image</button>
+      </form>
+    </section>
+
+    {% if result %}
+    <section class="results">
+      <div class="results-heading">
+        <div><p class="eyebrow">PROCESSING COMPLETE</p><h2>Your results</h2></div>
+        <span class="operation-tag">{{ result.operation }}</span>
+      </div>
+      <div class="image-grid">
+        <article class="image-card">
+          <h3>Original image</h3>
+          <img src="{{ result.original_url }}" alt="Original uploaded image">
+          <p>File size: <strong>{{ result.original_size }}</strong></p>
+        </article>
+        <article class="image-card">
+          <h3>Processed image</h3>
+          <img src="{{ result.processed_url }}" alt="Processed result">
+          <p>File size: <strong>{{ result.processed_size }}</strong></p>
+          {% if result.saved_percent > 0 %}
+            <p class="saving">{{ result.saved_percent }}% smaller than the original</p>
+          {% endif %}
+          <a class="download-button" href="{{ result.download_url }}">Download processed image</a>
+        </article>
+      </div>
+    </section>
+    {% endif %}
+
+    <section class="how-it-works">
+      <h2>How it works</h2>
+      <div class="steps">
+        <div><span>01</span><h3>Upload</h3><p>Select an image from your device.</p></div>
+        <div><span>02</span><h3>Process</h3><p>The Flask server applies your chosen operation.</p></div>
+        <div><span>03</span><h3>Download</h3><p>Preview and save the processed image.</p></div>
+      </div>
+    </section>
+  </main>
+
+  <footer>CloudPixel · Educational project built with Flask and Pillow</footer>
+
+  <script>
+    const operation = document.getElementById("operation");
+    const brightnessFields = document.getElementById("brightnessFields");
+    const resizeFields = document.getElementById("resizeFields");
+    const brightness = document.getElementById("brightness");
+    const brightnessValue = document.getElementById("brightnessValue");
+    const form = document.getElementById("processForm");
+    const submitButton = document.getElementById("submitButton");
+
+    function updateOptions() {
+      brightnessFields.classList.toggle("hidden", operation.value !== "brightness");
+      resizeFields.classList.toggle("hidden", operation.value !== "resize");
+    }
+    operation.addEventListener("change", updateOptions);
+    brightness.addEventListener("input", () => brightnessValue.textContent = brightness.value + "×");
+    form.addEventListener("submit", () => {
+      submitButton.disabled = true;
+      submitButton.textContent = "Processing...";
+    });
+    updateOptions();
+  </script>
+</body>
+</html>
